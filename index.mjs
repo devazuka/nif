@@ -88,6 +88,10 @@ const getNifDataNoCache = async nif => {
     portugalioSearch(nif).catch(orEmpty),
     europaSearch(nif).catch(orEmpty),
   ])
+  console.log('results for nif': nif)
+  console.log('racius', racius)
+  console.log('portugalio', portugalio)
+  console.log('europa', europa)
   const name = racius.name || portugalio.name || europa.name
   if (!name) throw notFoundErr
   const radr = racius.address
