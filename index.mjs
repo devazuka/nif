@@ -144,13 +144,18 @@ const isValidateNif = nif => {
 }
 
 if (process.env.PORT) {
+  const INVALID_NIF = Buffer.from('Invalid Nif')
   const CACHED_JSON = {
     'content-type': 'application/json; utf8',
     'cache-control': 'public, max-age=604800, immutable',
   }
   const srv = createServer(async ({ url }, response) => {
     const nif = url.slice(1, 12)
-    if (!isValidateNif(nif)) return response.end(INVALID_NIF)
+    if (!isValidateNif(nif)) {
+      response.writeHead(400)
+      response.end(INVALID_NIF)
+      return
+    }
 
     try {
       const body = await getNifResponse(nif)
