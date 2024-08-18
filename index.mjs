@@ -155,6 +155,7 @@ if (process.env.PORT) {
   }
   const srv = createServer(async ({ url }, response) => {
     const nif = url.slice(1, 12)
+    console.log({ nif })
     if (!isValidateNif(nif)) {
       response.writeHead(400)
       response.end(INVALID_NIF)
