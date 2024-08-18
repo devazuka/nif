@@ -88,7 +88,7 @@ const getNifDataNoCache = async nif => {
     portugalioSearch(nif).catch(orEmpty),
     europaSearch(nif).catch(orEmpty),
   ])
-  console.log('results for nif': nif)
+  console.log('results for nif', nif)
   console.log('racius', racius)
   console.log('portugalio', portugalio)
   console.log('europa', europa)
@@ -155,7 +155,7 @@ if (process.env.PORT) {
   }
   const srv = createServer(async ({ url }, response) => {
     const nif = url.slice(1, 12)
-    console.log({ nif })
+    console.log('nif:', nif)
     if (!isValidateNif(nif)) {
       response.writeHead(400)
       response.end(INVALID_NIF)
