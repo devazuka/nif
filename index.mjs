@@ -1,4 +1,4 @@
-import fs from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
 
@@ -20,7 +20,7 @@ export const throttle = (fn, delay) => {
 
 const checked = {}
 const ensureDir = async dir =>
-  checked[dir] || (checked[dir] = fs.mkdir(dir, { recursive: true }).then(() => checked[dir] = true))
+  checked[dir] || (checked[dir] = mkdir(dir, { recursive: true }).then(() => checked[dir] = true))
 
 const headers = {
   accept:
@@ -115,27 +115,14 @@ const getNifDataNoCache = async nif => {
 
 }
 
-export const getNifData = async nif => {
-  const dirPath = `nif/${nif.slice(0, 3)}/${nif.slice(3, 6)}`
-  const path = `${dirPath}/${nif.slice(6)}.json`
-  try { return JSON.parse(await readFile(path, 'utf8')) }
-  catch {/* if fail to retrive from cache, just get it from the crawl */ }
-  const result = await getNifDataNoCache(nif, dirPath)
-  // save in cache to avoid repeating the query later
-  await ensureDir(dirPath)
-  await fs.writeFile(path, JSON.stringify(result), 'utf8')
-  return result
-}
-
-// same as getNifData, but we return a buffer for the server
-export const getNifResponse = async nif => {
+const getNifResponse = async nif => {
   const dirPath = `nif/${nif.slice(0, 3)}/${nif.slice(3, 6)}`
   const path = `${dirPath}/${nif.slice(6)}.json`
   try { return await readFile(path) }
   catch {}
   const result = Buffer.from(JSON.stringify(await getNifDataNoCache(nif)))
   await ensureDir(dirPath)
-  await fs.writeFile(path, result)
+  await writeFile(path, result)
   return result
 }
 
@@ -155,21 +142,24 @@ if (process.env.PORT) {
   }
   const srv = createServer(async ({ url }, response) => {
     const nif = url.slice(1, 12)
-    console.log('nif:', nif)
+    const key = `GET:${nif}`
+    console.time(key)
     if (!isValidateNif(nif)) {
       response.writeHead(400)
       response.end(INVALID_NIF)
+      console.timeEnd(key)
       return
     }
 
     try {
       const body = await getNifResponse(nif)
       response.writeHead(200, CACHED_JSON)
-      return response.end(body)
+      response.end(body)
     } catch (err) {
       response.writeHead(err.status || 500)
-      return response.end(err.body || err.message)
+      response.end(err.body || err.message)
     }
+    console.timeEnd(key)
   })
 
   await once(srv.listen(process.env.PORT), 'listening')
